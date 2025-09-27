@@ -24,7 +24,7 @@ app.get("/", (req, res) => {
 
 function generateInvoice(cart, customer, orderId) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 40, size: "A4" });
+    const doc = new PDFDocument({ margin: 50, size: "A4" });
     const filename = `invoice_${orderId}.pdf`;
     const filepath = path.join(__dirname, "invoices", filename);
 
@@ -86,7 +86,7 @@ function generateInvoice(cart, customer, orderId) {
     doc.text("S.No", startX, y + 5, { width: colWidths[0], align: "center" });
     doc.text("Product", startX + colWidths[0], y + 5, { width: colWidths[1], align: "left" });
     doc.text("Qty", startX + colWidths[0] + colWidths[1], y + 5, { width: colWidths[2], align: "center" });
-    doc.text("MRP", startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "center" });
+    doc.text("MRP", startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "right" });
     doc.text("Net Price", startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y + 5, { width: colWidths[4], align: "center" });
 
     y += 25;
