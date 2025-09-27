@@ -21,9 +21,13 @@ app.get("/", (req, res) => {
 });
 
 // Generate invoice function
+// const fs = require("fs");
+// const path = require("path");
+// const PDFDocument = require("pdfkit");
+
 function generateInvoice(cart, customer, orderId) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ margin: 50 });
     const filename = `invoice_${orderId}.pdf`;
     const filepath = path.join(__dirname, "invoices", filename);
 
@@ -33,15 +37,27 @@ function generateInvoice(cart, customer, orderId) {
     doc.pipe(stream);
 
     // Header
-    doc.fontSize(20).text("Butterfly Crackers - Invoice", { align: "center" });
-    doc.moveDown();
+    doc.fontSize(22).text("Butterfly Crackers - Invoice", { align: "center" });
+    doc.moveDown(1);
 
     // Customer Info
-    doc.fontSize(12).text(`Order ID: ${orderId}`);
+    doc.fontSize(12);
+    doc.text(`Order ID: ${orderId}`);
     doc.text(`Name: ${customer.name}`);
     doc.text(`Email: ${customer.email}`);
     doc.text(`Phone: ${customer.phone}`);
-    doc.moveDown();
+    doc.moveDown(2);
+
+    // Table Header
+    doc.fontSize(12).font("Helvetica-Bold");
+    doc.text("S.No", 50, doc.y, { continued: true, width: 50 });
+    doc.text("Product", 100, doc.y, { continued: true, width: 180 });
+    doc.text("Qty", 280, doc.y, { continued: true, width: 60 });
+    doc.text("MRP", 340, doc.y, { continued: true, width: 80 });
+    doc.text("Net Price", 420, doc.y, { width: 100 });
+    doc.moveDown(0.5);
+    doc.moveTo(50, doc.y).lineTo(520, doc.y).stroke();
+    doc.font("Helvetica");
 
     // Products
     let mrpTotal = 0, netTotal = 0;
@@ -50,13 +66,30 @@ function generateInvoice(cart, customer, orderId) {
       const itemNet = item.price * item.qty;
       mrpTotal += itemMrp;
       netTotal += itemNet;
-      doc.text(`${i + 1}. ${item.name} - Qty: ${item.qty} | ₹${itemNet}`);
+
+      doc.text(`${i + 1}`, 50, doc.y, { continued: true, width: 50 });
+      doc.text(item.name, 100, doc.y, { continued: true, width: 180 });
+      doc.text(item.qty.toString(), 280, doc.y, { continued: true, width: 60 });
+      doc.text(`₹${itemMrp}`, 340, doc.y, { continued: true, width: 80 });
+      doc.text(`₹${itemNet}`, 420, doc.y, { width: 100 });
     });
 
-    doc.moveDown();
-    doc.text(`MRP Total: ₹${mrpTotal}`);
-    doc.text(`Discount: ₹${mrpTotal - netTotal}`);
-    doc.text(`Net Total: ₹${netTotal}`);
+    doc.moveDown(1);
+    doc.moveTo(50, doc.y).lineTo(520, doc.y).stroke();
+
+    // Totals
+    const discount = mrpTotal - netTotal;
+    doc.moveDown(0.5);
+    doc.font("Helvetica-Bold");
+    doc.text(`MRP Total: ₹${mrpTotal}`, { align: "right" });
+    doc.text(`Discount: ₹${discount}`, { align: "right" });
+    doc.text(`Net Total: ₹${netTotal}`, { align: "right" });
+    doc.font("Helvetica");
+
+    doc.moveDown(2);
+
+    // Thank You Message
+    doc.fontSize(14).text("🙏 Thank you for shopping with Butterfly Crackers! 🙏", { align: "center" });
 
     doc.end();
 
@@ -64,6 +97,9 @@ function generateInvoice(cart, customer, orderId) {
     stream.on("error", reject);
   });
 }
+
+module.exports = generateInvoice;
+
 
 // API endpoint
 app.post("/api/submit-order", async (req, res) => {
