@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const PDFDocument = require("pdfkit");
 const { Resend } = require("resend");
 const fs = require("fs");
