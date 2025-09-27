@@ -24,7 +24,7 @@ app.get("/", (req, res) => {
 
 function generateInvoice(cart, customer, orderId) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 20, size: "A4" });
+    const doc = new PDFDocument({ margin: 40, size: "A4" });
     const filename = `invoice_${orderId}.pdf`;
     const filepath = path.join(__dirname, "invoices", filename);
 
@@ -112,17 +112,17 @@ function generateInvoice(cart, customer, orderId) {
 
     // ===== TOTALS =====
     const discount = mrpTotal - netTotal;
-    doc.moveDown(3);
+    doc.moveDown(2);
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#000");
 
-    const totalsX = 330;
+    const totalsX = 350;
     doc.text("MRP Total:", totalsX, doc.y, { continued: true });
     doc.text(`₹${mrpTotal}`, { align: "right" });
 
     doc.text("Discount:", totalsX, doc.y, { continued: true });
     doc.text(`₹${discount}`, { align: "right" });
 
-    doc.fillColor("#000000ff").fontSize(12);
+    doc.fillColor("#27ae60").fontSize(12);
     doc.text("Net Total:", totalsX, doc.y, { continued: true });
     doc.text(`₹${netTotal}`, { align: "right" });
 
