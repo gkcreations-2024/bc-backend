@@ -20,9 +20,7 @@ app.get("/", (req, res) => {
   res.send("🔥 Butterfly Crackers API Running...");
 });
 
-const fs = require("fs");
-const path = require("path");
-const PDFDocument = require("pdfkit");
+
 
 function generateInvoice(cart, customer, orderId) {
   return new Promise((resolve, reject) => {
