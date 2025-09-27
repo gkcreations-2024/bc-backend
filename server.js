@@ -20,10 +20,9 @@ app.get("/", (req, res) => {
   res.send("🔥 Butterfly Crackers API Running...");
 });
 
-// Generate invoice function
-// const fs = require("fs");
-// const path = require("path");
-// const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
+const PDFDocument = require("pdfkit");
 
 function generateInvoice(cart, customer, orderId) {
   return new Promise((resolve, reject) => {
@@ -36,24 +35,33 @@ function generateInvoice(cart, customer, orderId) {
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
 
-    // Header
-    doc.fontSize(22).font("Helvetica-Bold")
-      .text("Butterfly Crackers - Invoice", { align: "center" });
+    // Company Header
+    doc.fontSize(20).font("Helvetica-Bold").text("Butterfly Crackers", { align: "center" });
+    doc.moveDown(0.3);
+    doc.fontSize(12).font("Helvetica").text("Sivakasi, Tamil Nadu, India", { align: "center" });
+    doc.moveDown(1);
+    doc.fontSize(16).font("Helvetica-Bold").text("INVOICE", { align: "center" });
     doc.moveDown(1);
 
-    // Customer Info
+    // Invoice Info
+    const invoiceDate = new Date().toLocaleDateString("en-IN");
     doc.fontSize(12).font("Helvetica");
-    doc.text(`Order ID: ${orderId}`);
-    doc.text(`Name: ${customer.name}`);
+    doc.text(`Invoice No: ${orderId}`);
+    doc.text(`Date: ${invoiceDate}`);
+    doc.moveDown(0.5);
+
+    // Customer Info
+    doc.text(`Customer: ${customer.name}`);
     doc.text(`Email: ${customer.email}`);
     doc.text(`Phone: ${customer.phone}`);
-    doc.moveDown(2);
+    doc.moveDown(1);
 
-    // Table Header
+    // Table Setup
     const startX = 50;
     let y = doc.y;
     const colWidths = [50, 200, 80, 100, 100]; // S.No | Product | Qty | MRP | Net Price
 
+    // Table Header
     doc.font("Helvetica-Bold");
     doc.text("S.No", startX, y, { width: colWidths[0], align: "center" });
     doc.text("Product", startX + colWidths[0], y, { width: colWidths[1], align: "left" });
@@ -78,25 +86,32 @@ function generateInvoice(cart, customer, orderId) {
       doc.text(i + 1, startX, y, { width: colWidths[0], align: "center" });
       doc.text(item.name, startX + colWidths[0], y, { width: colWidths[1], align: "left" });
       doc.text(item.qty.toString(), startX + colWidths[0] + colWidths[1], y, { width: colWidths[2], align: "center" });
-      doc.text(`\u20B9${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y, { width: colWidths[3], align: "right" });
-      doc.text(`\u20B9${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y, { width: colWidths[4], align: "right" });
+      doc.text(`₹${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y, { width: colWidths[3], align: "right" });
+      doc.text(`₹${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y, { width: colWidths[4], align: "right" });
 
       y += 20;
       doc.moveTo(startX, y).lineTo(550, y).stroke();
     });
 
-    // Totals
+    // Totals Section
     const discount = mrpTotal - netTotal;
-    doc.moveDown(2);
+    doc.moveDown(1.5);
     doc.font("Helvetica-Bold");
-    doc.text(`MRP Total: \u20B9${mrpTotal}`, { align: "right" });
-    doc.text(`Discount: \u20B9${discount}`, { align: "right" });
-    doc.text(`Net Total: \u20B9${netTotal}`, { align: "right" });
 
-    // Footer Thank You
+    const totalsX = 350;
+    doc.text(`MRP Total:`, totalsX, doc.y, { continued: true });
+    doc.text(`₹${mrpTotal}`, { align: "right" });
+
+    doc.text(`Discount:`, totalsX, doc.y, { continued: true });
+    doc.text(`₹${discount}`, { align: "right" });
+
+    doc.text(`Net Total:`, totalsX, doc.y, { continued: true });
+    doc.text(`₹${netTotal}`, { align: "right" });
+
+    // Footer
     doc.moveDown(3);
-    doc.fontSize(14).font("Helvetica-Bold")
-      .text("🙏 Thank you for shopping with Butterfly Crackers! 🙏", { align: "center" });
+    doc.fontSize(12).font("Helvetica-Oblique")
+      .text("Thank you for shopping with Butterfly Crackers!", { align: "center" });
 
     doc.end();
 
@@ -106,6 +121,7 @@ function generateInvoice(cart, customer, orderId) {
 }
 
 module.exports = generateInvoice;
+
 
 
 // API endpoint
