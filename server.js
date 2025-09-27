@@ -8,6 +8,10 @@ require("dotenv").config();
 
 const app = express();
 const resend = new Resend(process.env.RESEND_API_KEY);
+// 🔑 Allow frontend requests
+app.use(cors({
+  origin: "*"   // or [ "http://localhost:5500", "https://your-gitlab-pages-url" ]
+}));
 
 app.use(bodyParser.json());
 
