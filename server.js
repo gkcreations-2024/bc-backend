@@ -21,11 +21,9 @@ app.get("/", (req, res) => {
 });
 
 
-
-
 function generateInvoice(cart, customer, orderId) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 50, size: "A4" });
     const filename = `invoice_${orderId}.pdf`;
     const filepath = path.join(__dirname, "invoices", filename);
 
@@ -35,49 +33,61 @@ function generateInvoice(cart, customer, orderId) {
     doc.pipe(stream);
 
     // ====== HEADER ======
-    doc.fontSize(20).font("Helvetica-Bold").text("Butterfly Crackers", { align: "center" });
+    doc.fontSize(22).font("Helvetica-Bold").fillColor("#2c3e50")
+      .text("Butterfly Crackers", { align: "center" });
     doc.moveDown(0.5);
+    doc.fontSize(10).fillColor("gray")
+      .text("Quality Crackers - Celebrate Safely!", { align: "center" });
+    doc.moveDown(1);
+
+    // Divider
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(1);
 
     // ====== INVOICE INFO ======
     const now = new Date();
     const invoiceDate = now.toLocaleDateString("en-IN");
     const invoiceTime = now.toLocaleTimeString("en-IN");
 
-    doc.fontSize(12).font("Helvetica");
-    doc.text(`Invoice No: ${orderId}`);
-    doc.text(`Date      : ${invoiceDate}`);
-    doc.text(`Time      : ${invoiceTime}`);
-    doc.moveDown(1);
+    const leftX = 50;
+    const rightX = 350;
 
-    // ====== CUSTOMER INFO ======
-    doc.fontSize(12).font("Helvetica-Bold").text("Customer Details:");
-    doc.font("Helvetica");
-    doc.text(`Name     : ${customer.name}`);
-    doc.text(`Email    : ${customer.email}`);
-    doc.text(`Phone    : ${customer.phone}`);
-    doc.text(`WhatsApp : ${customer.whatsapp}`);
-    doc.text(`Pincode  : ${customer.pincode}`);
-    doc.text(`District : ${customer.district}`);
-    doc.moveDown(1);
+    doc.fontSize(12).fillColor("#000").font("Helvetica-Bold")
+      .text("Invoice Details", leftX, doc.y);
+    doc.font("Helvetica").fontSize(11).fillColor("#000");
+    doc.text(`Invoice No : ${orderId}`, leftX, doc.y + 15);
+    doc.text(`Date       : ${invoiceDate}`, leftX, doc.y + 30);
+    doc.text(`Time       : ${invoiceTime}`, leftX, doc.y + 45);
 
-    // ====== TABLE HEADER ======
-    const startX = 50;
+    doc.font("Helvetica-Bold").text("Customer Details", rightX, doc.y - 45);
+    doc.font("Helvetica").fontSize(11);
+    doc.text(`Name     : ${customer.name}`, rightX, doc.y + 15);
+    doc.text(`Email    : ${customer.email}`, rightX, doc.y + 30);
+    doc.text(`Phone    : ${customer.phone}`, rightX, doc.y + 45);
+    doc.text(`WhatsApp : ${customer.whatsapp}`, rightX, doc.y + 60);
+    doc.text(`Pincode  : ${customer.pincode}`, rightX, doc.y + 75);
+    doc.text(`District : ${customer.district}`, rightX, doc.y + 90);
+
+    doc.moveDown(3);
+
+    // ====== PRODUCT TABLE ======
     let y = doc.y;
+    const startX = 50;
     const colWidths = [50, 200, 80, 100, 100]; // S.No | Product | Qty | MRP | Net
 
-    doc.font("Helvetica-Bold");
-    doc.text("S.No", startX, y, { width: colWidths[0], align: "center" });
-    doc.text("Product", startX + colWidths[0], y, { width: colWidths[1], align: "left" });
-    doc.text("Qty", startX + colWidths[0] + colWidths[1], y, { width: colWidths[2], align: "center" });
-    doc.text("MRP", startX + colWidths[0] + colWidths[1] + colWidths[2], y, { width: colWidths[3], align: "right" });
-    doc.text("Net Price", startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y, { width: colWidths[4], align: "right" });
+    // Table Header Background
+    doc.rect(startX, y, 530, 20).fill("#f1f1f1").stroke();
+    doc.fillColor("#000").font("Helvetica-Bold").fontSize(11);
+    doc.text("S.No", startX, y + 5, { width: colWidths[0], align: "center" });
+    doc.text("Product", startX + colWidths[0], y + 5, { width: colWidths[1], align: "left" });
+    doc.text("Qty", startX + colWidths[0] + colWidths[1], y + 5, { width: colWidths[2], align: "center" });
+    doc.text("MRP", startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "right" });
+    doc.text("Net Price", startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y + 5, { width: colWidths[4], align: "right" });
 
-    y += 20;
-    doc.moveTo(startX, y).lineTo(550, y).stroke();
+    y += 25;
+    doc.font("Helvetica").fontSize(10);
 
-    // ====== PRODUCTS ======
     let mrpTotal = 0, netTotal = 0;
-    doc.font("Helvetica");
 
     cart.forEach((item, i) => {
       const itemMrp = item.oldPrice * item.qty;
@@ -85,7 +95,6 @@ function generateInvoice(cart, customer, orderId) {
       mrpTotal += itemMrp;
       netTotal += itemNet;
 
-      y += 10;
       doc.text(i + 1, startX, y, { width: colWidths[0], align: "center" });
       doc.text(item.name, startX + colWidths[0], y, { width: colWidths[1], align: "left" });
       doc.text(item.qty.toString(), startX + colWidths[0] + colWidths[1], y, { width: colWidths[2], align: "center" });
@@ -93,27 +102,28 @@ function generateInvoice(cart, customer, orderId) {
       doc.text(`₹${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y, { width: colWidths[4], align: "right" });
 
       y += 20;
-      doc.moveTo(startX, y).lineTo(550, y).stroke();
+      doc.moveTo(startX, y).lineTo(580, y).strokeColor("#e0e0e0").stroke();
     });
 
     // ====== TOTALS ======
     const discount = mrpTotal - netTotal;
-    doc.moveDown(1);
-    doc.font("Helvetica-Bold");
+    doc.moveDown(2);
+    doc.fontSize(12).font("Helvetica-Bold");
 
     const totalsX = 350;
-    doc.text(`MRP Total:`, totalsX, doc.y, { continued: true });
+    doc.text("MRP Total:", totalsX, doc.y, { continued: true });
     doc.text(`₹${mrpTotal}`, { align: "right" });
 
-    doc.text(`Discount:`, totalsX, doc.y, { continued: true });
+    doc.text("Discount:", totalsX, doc.y, { continued: true });
     doc.text(`₹${discount}`, { align: "right" });
 
-    doc.text(`Net Total:`, totalsX, doc.y, { continued: true });
+    doc.fillColor("#27ae60").fontSize(13);
+    doc.text("Net Total:", totalsX, doc.y, { continued: true });
     doc.text(`₹${netTotal}`, { align: "right" });
 
     // ====== FOOTER ======
-    doc.moveDown(2);
-    doc.fontSize(11).font("Helvetica-Oblique")
+    doc.moveDown(3);
+    doc.fontSize(11).fillColor("gray").font("Helvetica-Oblique")
       .text("Thank you for shopping with Butterfly Crackers!", { align: "center" });
 
     doc.end();
@@ -124,7 +134,6 @@ function generateInvoice(cart, customer, orderId) {
 }
 
 module.exports = generateInvoice;
-
 
 
 // API endpoint
