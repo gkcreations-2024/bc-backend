@@ -37,11 +37,12 @@ function generateInvoice(cart, customer, orderId) {
     doc.pipe(stream);
 
     // Header
-    doc.fontSize(22).text("Butterfly Crackers - Invoice", { align: "center" });
+    doc.fontSize(22).font("Helvetica-Bold")
+      .text("Butterfly Crackers - Invoice", { align: "center" });
     doc.moveDown(1);
 
     // Customer Info
-    doc.fontSize(12);
+    doc.fontSize(12).font("Helvetica");
     doc.text(`Order ID: ${orderId}`);
     doc.text(`Name: ${customer.name}`);
     doc.text(`Email: ${customer.email}`);
@@ -49,47 +50,53 @@ function generateInvoice(cart, customer, orderId) {
     doc.moveDown(2);
 
     // Table Header
-    doc.fontSize(12).font("Helvetica-Bold");
-    doc.text("S.No", 50, doc.y, { continued: true, width: 50 });
-    doc.text("Product", 100, doc.y, { continued: true, width: 180 });
-    doc.text("Qty", 280, doc.y, { continued: true, width: 60 });
-    doc.text("MRP", 340, doc.y, { continued: true, width: 80 });
-    doc.text("Net Price", 420, doc.y, { width: 100 });
-    doc.moveDown(0.5);
-    doc.moveTo(50, doc.y).lineTo(520, doc.y).stroke();
-    doc.font("Helvetica");
+    const startX = 50;
+    let y = doc.y;
+    const colWidths = [50, 200, 80, 100, 100]; // S.No | Product | Qty | MRP | Net Price
+
+    doc.font("Helvetica-Bold");
+    doc.text("S.No", startX, y, { width: colWidths[0], align: "center" });
+    doc.text("Product", startX + colWidths[0], y, { width: colWidths[1], align: "left" });
+    doc.text("Qty", startX + colWidths[0] + colWidths[1], y, { width: colWidths[2], align: "center" });
+    doc.text("MRP", startX + colWidths[0] + colWidths[1] + colWidths[2], y, { width: colWidths[3], align: "right" });
+    doc.text("Net Price", startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y, { width: colWidths[4], align: "right" });
+
+    y += 20;
+    doc.moveTo(startX, y).lineTo(550, y).stroke();
 
     // Products
     let mrpTotal = 0, netTotal = 0;
+    doc.font("Helvetica");
+
     cart.forEach((item, i) => {
       const itemMrp = item.oldPrice * item.qty;
       const itemNet = item.price * item.qty;
       mrpTotal += itemMrp;
       netTotal += itemNet;
 
-      doc.text(`${i + 1}`, 50, doc.y, { continued: true, width: 50 });
-      doc.text(item.name, 100, doc.y, { continued: true, width: 180 });
-      doc.text(item.qty.toString(), 280, doc.y, { continued: true, width: 60 });
-      doc.text(`₹${itemMrp}`, 340, doc.y, { continued: true, width: 80 });
-      doc.text(`₹${itemNet}`, 420, doc.y, { width: 100 });
-    });
+      y += 10;
+      doc.text(i + 1, startX, y, { width: colWidths[0], align: "center" });
+      doc.text(item.name, startX + colWidths[0], y, { width: colWidths[1], align: "left" });
+      doc.text(item.qty.toString(), startX + colWidths[0] + colWidths[1], y, { width: colWidths[2], align: "center" });
+      doc.text(`\u20B9${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y, { width: colWidths[3], align: "right" });
+      doc.text(`\u20B9${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y, { width: colWidths[4], align: "right" });
 
-    doc.moveDown(1);
-    doc.moveTo(50, doc.y).lineTo(520, doc.y).stroke();
+      y += 20;
+      doc.moveTo(startX, y).lineTo(550, y).stroke();
+    });
 
     // Totals
     const discount = mrpTotal - netTotal;
-    doc.moveDown(0.5);
-    doc.font("Helvetica-Bold");
-    doc.text(`MRP Total: ₹${mrpTotal}`, { align: "right" });
-    doc.text(`Discount: ₹${discount}`, { align: "right" });
-    doc.text(`Net Total: ₹${netTotal}`, { align: "right" });
-    doc.font("Helvetica");
-
     doc.moveDown(2);
+    doc.font("Helvetica-Bold");
+    doc.text(`MRP Total: \u20B9${mrpTotal}`, { align: "right" });
+    doc.text(`Discount: \u20B9${discount}`, { align: "right" });
+    doc.text(`Net Total: \u20B9${netTotal}`, { align: "right" });
 
-    // Thank You Message
-    doc.fontSize(14).text("🙏 Thank you for shopping with Butterfly Crackers! 🙏", { align: "center" });
+    // Footer Thank You
+    doc.moveDown(3);
+    doc.fontSize(14).font("Helvetica-Bold")
+      .text("🙏 Thank you for shopping with Butterfly Crackers! 🙏", { align: "center" });
 
     doc.end();
 
