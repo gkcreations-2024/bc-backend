@@ -28,7 +28,7 @@ function capitalizeWords(str) {
 
 function generateInvoice(cart, customer, orderId) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: "A4" });
+    const doc = new PDFDocument({ margin: 60, size: "A4" });
     const filename = `invoice_${orderId}.pdf`;
     const filepath = path.join(__dirname, "invoices", filename);
 
@@ -36,12 +36,6 @@ function generateInvoice(cart, customer, orderId) {
 
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
-
-    // ✅ Use font that supports ₹ symbol
-    const fontPath = path.join(__dirname, "public", "fonts", "NotoSans-Regular.ttf");
-    if (fs.existsSync(fontPath)) {
-      doc.font(fontPath);
-    }
 
     // ===== HEADER =====
     doc.fontSize(22).font("Helvetica-Bold").fillColor("#2c3e50")
@@ -51,20 +45,18 @@ function generateInvoice(cart, customer, orderId) {
       .text("Quality Crackers - Celebrate Safely!", { align: "center" });
     doc.moveDown(0.5);
 
-    // Divider
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor("#aaaaaa").stroke();
+    doc.moveTo(60, doc.y).lineTo(550, doc.y).strokeColor("#aaaaaa").stroke();
     doc.moveDown(1);
 
-    // ===== INVOICE INFO & CUSTOMER INFO =====
+    // ===== INVOICE INFO =====
     const now = new Date();
     const invoiceDate = now.toLocaleDateString("en-IN");
     const invoiceTime = now.toLocaleTimeString("en-IN");
 
-    const leftX = 50;
+    const leftX = 60;
     const rightX = 330;
     let y = doc.y;
 
-    // Left Block - Invoice Info
     doc.font("Helvetica-Bold").fontSize(11).fillColor("#000")
       .text("Invoice Details", leftX, y);
     doc.font("Helvetica").fontSize(10);
@@ -72,7 +64,6 @@ function generateInvoice(cart, customer, orderId) {
     doc.text(`Date       : ${invoiceDate}`, leftX, y + 30);
     doc.text(`Time       : ${invoiceTime}`, leftX, y + 45);
 
-    // Right Block - Customer Info
     doc.font("Helvetica-Bold").fontSize(11).text("Customer Details", rightX, y);
     doc.font("Helvetica").fontSize(10);
     doc.text(`Name     : ${capitalizeWords(customer.name)}`, rightX, y + 15);
@@ -85,12 +76,12 @@ function generateInvoice(cart, customer, orderId) {
     doc.moveDown(4);
 
     // ===== PRODUCT TABLE =====
-    const startX = 50;
-    const colWidths = [50, 200, 80, 100, 100]; // S.No | Product | Qty | MRP | Net Price
+    const startX = 60;
+    const tableWidth = 480;
+    const colWidths = [50, 200, 80, 75, 75];
     y = doc.y;
 
-    // Header row background
-    doc.rect(startX, y, 530, 20).fill("#f5f5f5").stroke();
+    doc.rect(startX, y, tableWidth, 20).fill("#f5f5f5").stroke();
     doc.fillColor("#000").font("Helvetica-Bold").fontSize(10);
 
     doc.text("S.No", startX, y + 5, { width: colWidths[0], align: "center" });
@@ -110,13 +101,13 @@ function generateInvoice(cart, customer, orderId) {
       mrpTotal += itemMrp;
       netTotal += itemNet;
 
-      doc.rect(startX, y, 530, 20).strokeColor("#e0e0e0").stroke();
+      doc.rect(startX, y, tableWidth, 20).strokeColor("#e0e0e0").stroke();
 
       doc.text(i + 1, startX, y + 5, { width: colWidths[0], align: "center" });
       doc.text(item.name, startX + colWidths[0], y + 5, { width: colWidths[1], align: "left" });
       doc.text(item.qty.toString(), startX + colWidths[0] + colWidths[1], y + 5, { width: colWidths[2], align: "center" });
-      doc.text(`₹${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "center" });
-      doc.text(`₹${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y + 5, { width: colWidths[4], align: "center" });
+      doc.text(`Rs. ${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "center" });
+      doc.text(`Rs. ${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y + 5, { width: colWidths[4], align: "center" });
 
       y += 20;
     });
@@ -126,19 +117,17 @@ function generateInvoice(cart, customer, orderId) {
     doc.moveDown(2);
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#000");
 
-    const totalsX = 50;
-    const totalsWidth = 530;
-
-    doc.text(`MRP Total: ₹${mrpTotal}`, totalsX, doc.y, { width: totalsWidth, align: "right" });
-    doc.text(`Discount: ₹${discount}`, totalsX, doc.y, { width: totalsWidth, align: "right" });
+    const totalsX = startX;
+    doc.text(`MRP Total: Rs. ${mrpTotal}`, totalsX, doc.y, { width: tableWidth, align: "right" });
+    doc.text(`Discount: Rs. ${discount}`, totalsX, doc.y, { width: tableWidth, align: "right" });
 
     doc.fillColor("#27ae60").fontSize(12);
-    doc.text(`Net Total: ₹${netTotal}`, totalsX, doc.y, { width: totalsWidth, align: "right" });
+    doc.text(`Net Total: Rs. ${netTotal}`, totalsX, doc.y, { width: tableWidth, align: "right" });
 
     // ===== FOOTER =====
-    doc.fontSize(10).fillColor("gray").font("Helvetica-Oblique");
-    const bottomY = doc.page.height - 50; // page bottom
-    doc.text("Thank you for shopping with Butterfly Crackers!", 50, bottomY, { align: "center", width: 500 });
+    doc.moveDown(3);
+    doc.fontSize(10).fillColor("gray").font("Helvetica-Oblique")
+      .text("Thank you for shopping with Butterfly Crackers!", { align: "center" });
 
     doc.end();
 
