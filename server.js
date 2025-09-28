@@ -22,6 +22,10 @@ app.get("/", (req, res) => {
 
 
 
+function capitalizeWords(str) {
+  return str.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function generateInvoice(cart, customer, orderId) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: "A4" });
@@ -65,12 +69,12 @@ function generateInvoice(cart, customer, orderId) {
     // Right Block - Customer Info
     doc.font("Helvetica-Bold").fontSize(11).text("Customer Details", rightX, y);
     doc.font("Helvetica").fontSize(10);
-    doc.text(`Name     : ${customer.name}`, rightX, y + 15);
+    doc.text(`Name     : ${capitalizeWords(customer.name)}`, rightX, y + 15);
     doc.text(`Email    : ${customer.email}`, rightX, y + 30);
     doc.text(`Phone    : ${customer.phone}`, rightX, y + 45);
     doc.text(`WhatsApp : ${customer.whatsapp}`, rightX, y + 60);
     doc.text(`Pincode  : ${customer.pincode}`, rightX, y + 75);
-    doc.text(`District : ${customer.district}`, rightX, y + 90);
+    doc.text(`District : ${capitalizeWords(customer.district)}`, rightX, y + 90);
 
     doc.moveDown(4);
 
@@ -86,10 +90,10 @@ function generateInvoice(cart, customer, orderId) {
     doc.text("S.No", startX, y + 5, { width: colWidths[0], align: "center" });
     doc.text("Product", startX + colWidths[0], y + 5, { width: colWidths[1], align: "left" });
     doc.text("Qty", startX + colWidths[0] + colWidths[1], y + 5, { width: colWidths[2], align: "center" });
-    doc.text("MRP", startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "right" });
+    doc.text("MRP", startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "center" });
     doc.text("Net Price", startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y + 5, { width: colWidths[4], align: "center" });
 
-    y += 25;
+    y += 20;
     doc.font("Helvetica").fontSize(10).fillColor("#000");
 
     let mrpTotal = 0, netTotal = 0;
@@ -100,14 +104,16 @@ function generateInvoice(cart, customer, orderId) {
       mrpTotal += itemMrp;
       netTotal += itemNet;
 
-      doc.text(i + 1, startX, y, { width: colWidths[0], align: "center" });
-      doc.text(item.name, startX + colWidths[0], y, { width: colWidths[1], align: "left" });
-      doc.text(item.qty.toString(), startX + colWidths[0] + colWidths[1], y, { width: colWidths[2], align: "center" });
-      doc.text(`₹${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y, { width: colWidths[3], align: "right" });
-      doc.text(`₹${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y, { width: colWidths[4], align: "center" });
+      // Row background (white)
+      doc.rect(startX, y, 530, 20).strokeColor("#e0e0e0").stroke();
+
+      doc.text(i + 1, startX, y + 5, { width: colWidths[0], align: "center" });
+      doc.text(item.name, startX + colWidths[0], y + 5, { width: colWidths[1], align: "left" });
+      doc.text(item.qty.toString(), startX + colWidths[0] + colWidths[1], y + 5, { width: colWidths[2], align: "center" });
+      doc.text(`₹${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "center" });
+      doc.text(`₹${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y + 5, { width: colWidths[4], align: "center" });
 
       y += 20;
-      doc.moveTo(startX, y).lineTo(580, y).strokeColor("#e0e0e0").stroke();
     });
 
     // ===== TOTALS =====
@@ -116,14 +122,14 @@ function generateInvoice(cart, customer, orderId) {
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#000");
 
     const totalsX = 350;
-    doc.text("MRP Total:", totalsX, doc.y, { continued: true });
+    doc.text("MRP Total:", totalsX, doc.y, { continued: true, align: "left" });
     doc.text(`₹${mrpTotal}`, { align: "right" });
 
-    doc.text("Discount:", totalsX, doc.y, { continued: true });
+    doc.text("Discount:", totalsX, doc.y, { continued: true, align: "left" });
     doc.text(`₹${discount}`, { align: "right" });
 
     doc.fillColor("#27ae60").fontSize(12);
-    doc.text("Net Total:", totalsX, doc.y, { continued: true });
+    doc.text("Net Total:", totalsX, doc.y, { continued: true, align: "left" });
     doc.text(`₹${netTotal}`, { align: "right" });
 
     // ===== FOOTER =====
