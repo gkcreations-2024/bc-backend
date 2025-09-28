@@ -37,6 +37,12 @@ function generateInvoice(cart, customer, orderId) {
     const stream = fs.createWriteStream(filepath);
     doc.pipe(stream);
 
+    // ✅ Use font that supports ₹ symbol
+    const fontPath = path.join(__dirname, "public", "fonts", "NotoSans-Regular.ttf");
+    if (fs.existsSync(fontPath)) {
+      doc.font(fontPath);
+    }
+
     // ===== HEADER =====
     doc.fontSize(22).font("Helvetica-Bold").fillColor("#2c3e50")
       .text("Butterfly Crackers", { align: "center" });
@@ -104,7 +110,6 @@ function generateInvoice(cart, customer, orderId) {
       mrpTotal += itemMrp;
       netTotal += itemNet;
 
-      // Row background (white)
       doc.rect(startX, y, 530, 20).strokeColor("#e0e0e0").stroke();
 
       doc.text(i + 1, startX, y + 5, { width: colWidths[0], align: "center" });
@@ -121,21 +126,19 @@ function generateInvoice(cart, customer, orderId) {
     doc.moveDown(2);
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#000");
 
-    const totalsX = 350;
-    doc.text("MRP Total:", totalsX, doc.y, { continued: true, align: "left" });
-    doc.text(`₹${mrpTotal}`, { align: "right" });
+    const totalsX = 50;
+    const totalsWidth = 530;
 
-    doc.text("Discount:", totalsX, doc.y, { continued: true, align: "left" });
-    doc.text(`₹${discount}`, { align: "right" });
+    doc.text(`MRP Total: ₹${mrpTotal}`, totalsX, doc.y, { width: totalsWidth, align: "right" });
+    doc.text(`Discount: ₹${discount}`, totalsX, doc.y, { width: totalsWidth, align: "right" });
 
     doc.fillColor("#27ae60").fontSize(12);
-    doc.text("Net Total:", totalsX, doc.y, { continued: true, align: "left" });
-    doc.text(`₹${netTotal}`, { align: "right" });
+    doc.text(`Net Total: ₹${netTotal}`, totalsX, doc.y, { width: totalsWidth, align: "right" });
 
     // ===== FOOTER =====
-    doc.moveDown(3);
-    doc.fontSize(10).fillColor("gray").font("Helvetica-Oblique")
-      .text("Thank you for shopping with Butterfly Crackers!", { align: "center" });
+    doc.fontSize(10).fillColor("gray").font("Helvetica-Oblique");
+    const bottomY = doc.page.height - 50; // page bottom
+    doc.text("Thank you for shopping with Butterfly Crackers!", 50, bottomY, { align: "center", width: 500 });
 
     doc.end();
 
@@ -145,7 +148,6 @@ function generateInvoice(cart, customer, orderId) {
 }
 
 module.exports = generateInvoice;
-
 
 
 // API endpoint
