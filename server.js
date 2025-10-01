@@ -162,7 +162,14 @@ function generateInvoice(cart, customer, orderId) {
     // ===== INVOICE INFO =====
     const now = new Date();
     const invoiceDate = now.toLocaleDateString("en-IN");
-    const invoiceTime = now.toLocaleTimeString("en-IN");
+    const invoiceTime = now.toLocaleTimeString("en-IN", {
+  timeZone: "Asia/Kolkata", // ensures IST even if server in another country
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: true              // ✅ 12-hour format
+});
+
 
     const leftX = 60;
     const rightX = 330;
@@ -214,29 +221,39 @@ function generateInvoice(cart, customer, orderId) {
     const pageHeight = doc.page.height - doc.page.margins.bottom;
 
     cart.forEach((item, i) => {
-      const itemMrp = item.oldPrice * item.qty;
-      const itemNet = item.price * item.qty;
-      mrpTotal += itemMrp;
-      netTotal += itemNet;
+  const itemMrp = item.oldPrice * item.qty;
+  const itemNet = item.price * item.qty;
+  mrpTotal += itemMrp;
+  netTotal += itemNet;
 
-      // Check for page break
-      if (y + 30 > pageHeight) {
-        doc.addPage();
-        y = drawTableHeader(doc.y); // draw header again on new page
-      }
+  // Measure product name height
+  const productTextOptions = { width: colWidths[1], align: "left" };
+  const productHeight = doc.heightOfString(item.name, productTextOptions);
 
-      // Draw row
-      doc.rect(startX, y, tableWidth, 20).strokeColor("#e0e0e0").stroke();
-      doc.font("Helvetica").fontSize(10).fillColor("#000");
+  // Pick max row height (min 20px, but larger if product name wraps)
+  const rowHeight = Math.max(20, productHeight + 10);
 
-      doc.text(i + 1, startX, y + 5, { width: colWidths[0], align: "center" });
-      doc.text(item.name, startX + colWidths[0], y + 5, { width: colWidths[1], align: "left" });
-      doc.text(item.qty.toString(), startX + colWidths[0] + colWidths[1], y + 5, { width: colWidths[2], align: "center" });
-      doc.text(`Rs. ${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "center" });
-      doc.text(`Rs. ${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y + 5, { width: colWidths[4], align: "center" });
+  // Page break check
+  if (y + rowHeight > pageHeight) {
+    doc.addPage();
+    y = drawTableHeader(doc.y);
+  }
 
-      y += 20;
-    });
+  // Draw row box
+  doc.rect(startX, y, tableWidth, rowHeight).strokeColor("#e0e0e0").stroke();
+  doc.font("Helvetica").fontSize(10).fillColor("#000");
+
+  // Write row values
+  doc.text(i + 1, startX, y + 5, { width: colWidths[0], align: "center" });
+  doc.text(item.name, startX + colWidths[0], y + 5, { width: colWidths[1], align: "left" });
+  doc.text(item.qty.toString(), startX + colWidths[0] + colWidths[1], y + 5, { width: colWidths[2], align: "center" });
+  doc.text(`Rs. ${itemMrp}`, startX + colWidths[0] + colWidths[1] + colWidths[2], y + 5, { width: colWidths[3], align: "center" });
+  doc.text(`Rs. ${itemNet}`, startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], y + 5, { width: colWidths[4], align: "center" });
+
+  // Move down by row height
+  y += rowHeight;
+});
+
 
     // ===== TOTALS =====
     const discount = mrpTotal - netTotal;
